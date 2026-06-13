@@ -79,8 +79,14 @@ jobs:
           mkdir -p reports/appium
           echo "Starting Appium..."
           appium --port 4723 > reports/appium/appium-server.log 2>&1 &
-          sleep 10
           
+          echo "Waiting for Appium server..."
+          for i in {1..15}; do curl -s http://127.0.0.1:4723/status && break || sleep 2; done
+          
+          echo "=== Installed Packages Diagnostic ==="
+          adb shell pm list packages | grep appium || true
+          adb shell pm list packages | grep com.gigpath.app || true
+
           echo "Running mobile tests..."
           npm run test:mobile
           
