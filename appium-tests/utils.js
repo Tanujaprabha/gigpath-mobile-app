@@ -25,11 +25,20 @@ export async function setupAppiumDriver() {
     'appium:chromedriverExecutableDir': path.resolve(process.cwd(), 'appium-tests/chromedrivers'),
   };
 
-  console.log('Starting Appium driver and launching app...');
-  const driver = await new Builder()
-    .usingServer('http://127.0.0.1:4723/')
-    .withCapabilities(capabilities)
-    .build();
+  console.log(`\n[${new Date().toISOString()}] [Timing] Starting Appium driver and launching app...`);
+  console.time('Session Creation');
+  let driver;
+  try {
+    driver = await new Builder()
+      .usingServer('http://127.0.0.1:4723/')
+      .withCapabilities(capabilities)
+      .build();
+    console.timeEnd('Session Creation');
+  } catch (err) {
+    console.error(`\n[${new Date().toISOString()}] ❌ Session Creation failed: ${err.message}`);
+    console.timeEnd('Session Creation');
+    throw err;
+  }
 
   // Inject Appium's custom endpoints into selenium-webdriver
   driver.getExecutor().defineCommand('getContexts', 'GET', '/session/:sessionId/contexts');
@@ -135,28 +144,63 @@ export async function takeScreenshotOnFailure(driver, testContext) {
   }
 }
 
+export async function forceScreenshot(driver, name) {
+  if (!driver) return;
+  const reportsDir = path.resolve('reports', 'appium', 'screenshots');
+  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const screenshotPath = path.join(reportsDir, `${name}_${timestamp}.png`);
+  try {
+    const image = await driver.takeScreenshot();
+    fs.writeFileSync(screenshotPath, image, 'base64');
+    console.log(`\n📸 Forced Screenshot saved: ${screenshotPath}`);
+  } catch (err) {
+    console.error('Failed to take forced screenshot:', err.message);
+  }
+}
+
 export async function performLogin(driver, email = 'test@example.com', password = 'testpassword123') {
   const { until, By } = await import('selenium-webdriver');
-  await driver.executeScript('window.location.hash = "#/login"');
-  
-  const emailInput = await driver.wait(until.elementLocated(By.css('input[type="email"]')), 15000);
-  const passwordInput = await driver.wait(until.elementLocated(By.css('input[type="password"]')), 15000);
-  const loginBtn = await driver.wait(until.elementLocated(By.css('button[type="submit"]')), 15000);
+  try {
+    console.log(`\n[${new Date().toISOString()}] [Timing] Navigating to login hash...`);
+    await driver.executeScript('window.location.hash = "#/login"');
+    
+    console.log(`[${new Date().toISOString()}] [Timing] Waiting for email input...`);
+    console.time('Element Lookup: Email');
+    const emailInput = await driver.wait(until.elementLocated(By.css('input[type="email"]')), 15000);
+    console.timeEnd('Element Lookup: Email');
 
-  await emailInput.clear();
-  await passwordInput.clear();
-  await emailInput.sendKeys(email);
-  await passwordInput.sendKeys(password);
-  
-  // Hide keyboard to prevent click interception
-  await driver.executeScript("document.activeElement.blur();");
-  await driver.sleep(500);
-  
-  // Use JS click to absolutely ensure it bypasses any overlaps
-  await driver.executeScript("arguments[0].click();", loginBtn);
-  
-  // Wait for navigation away from login
-  await driver.wait(until.urlContains('/dashboard'), 15000);
+    console.log(`[${new Date().toISOString()}] [Timing] Waiting for password input...`);
+    console.time('Element Lookup: Password');
+    const passwordInput = await driver.wait(until.elementLocated(By.css('input[type="password"]')), 15000);
+    console.timeEnd('Element Lookup: Password');
+
+    console.log(`[${new Date().toISOString()}] [Timing] Waiting for submit button...`);
+    console.time('Element Lookup: Submit');
+    const loginBtn = await driver.wait(until.elementLocated(By.css('button[type="submit"]')), 15000);
+    console.timeEnd('Element Lookup: Submit');
+
+    await emailInput.clear();
+    await passwordInput.clear();
+    await emailInput.sendKeys(email);
+    await passwordInput.sendKeys(password);
+    
+    await driver.executeScript("document.activeElement.blur();");
+    await driver.sleep(500);
+    await driver.executeScript("arguments[0].click();", loginBtn);
+    
+    console.log(`[${new Date().toISOString()}] [Timing] Waiting for dashboard navigation...`);
+    console.time('Navigation: Dashboard');
+    await driver.wait(until.urlContains('/dashboard'), 15000);
+    console.timeEnd('Navigation: Dashboard');
+    console.log(`[${new Date().toISOString()}] [Timing] Login completed successfully.\n`);
+  } catch (err) {
+    console.error(`\n[${new Date().toISOString()}] ❌ performLogin failed: ${err.message}`);
+    const url = await driver.getCurrentUrl().catch(() => 'unknown');
+    console.error(`Current URL at failure: ${url}`);
+    await forceScreenshot(driver, 'performLogin_crash');
+    throw err;
+  }
 }
 
 let manualModeTriggered = false;

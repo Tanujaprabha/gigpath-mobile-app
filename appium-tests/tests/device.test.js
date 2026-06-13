@@ -7,7 +7,7 @@ describe('TC-MOBILE-DEV: Device & Network', function () {
   let networkModesUsed = new Set();
 
   before(async function () {
-    this.timeout(60000);
+    this.timeout(180000);
     driver = await setupAppiumDriver();
     
     await driver.executeScript(`
