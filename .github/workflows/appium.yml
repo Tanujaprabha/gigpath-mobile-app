@@ -54,11 +54,30 @@ jobs:
         npm install -g appium
         appium driver list --installed
         
-    - name: Start Appium Server
-      run: appium --port 4723 &
-
-    - name: Run Mobile Tests
-      run: npm run test:mobile
+    - name: Run Tests in Android Emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 34
+        arch: x86_64
+        profile: pixel_6
+        script: |
+          echo "Waiting for emulator to be fully booted..."
+          adb wait-for-device
+          
+          echo "=== ADB Devices ==="
+          adb devices
+          
+          if ! adb devices | grep -q "emulator"; then
+            echo "Error: No emulator device visible!"
+            exit 1
+          fi
+          
+          echo "Emulator is visible. Starting Appium..."
+          appium --port 4723 &
+          sleep 10
+          
+          echo "Running mobile tests..."
+          npm run test:mobile
       
     - name: Upload Reports
       if: always()
