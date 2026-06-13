@@ -16,7 +16,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24.15.0'
+        node-version: '20'
         cache: 'npm'
         
     - name: Install dependencies
@@ -25,10 +25,10 @@ jobs:
     - name: Install Appium and UIAutomator2
       run: |
         npm install -g appium
-        appium plugin install --source=npm appium-uiautomator2-driver
+        appium driver install uiautomator2
         
     - name: Start Appium Server
-      run: appium --allow-insecure uiautomator2:chromedriver_autodownload &
+      run: appium --port 4723 &
       
     - name: Run Mobile Tests
       run: npm run test:mobile
