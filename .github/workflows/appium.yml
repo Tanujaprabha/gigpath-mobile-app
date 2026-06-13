@@ -25,11 +25,11 @@ jobs:
     - name: Install Appium and UIAutomator2
       run: |
         npm install -g appium
-        appium driver install uiautomator2
+        appium driver list --installed
         
     - name: Start Appium Server
       run: appium --port 4723 &
-      
+
     - name: Run Mobile Tests
       run: npm run test:mobile
       
