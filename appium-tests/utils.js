@@ -18,7 +18,10 @@ export async function setupAppiumDriver() {
     'appium:automationName': 'UiAutomator2',
     'appium:app': apkPath,
     'appium:autoGrantPermissions': true,
-    'appium:newCommandTimeout': 3600,
+    'appium:newCommandTimeout': 300,
+    'appium:adbExecTimeout': 60000,
+    'appium:uiautomator2ServerInstallTimeout': 60000,
+    'appium:androidInstallTimeout': 120000,
     'appium:chromedriverExecutableDir': path.resolve(process.cwd(), 'appium-tests/chromedrivers'),
   };
 

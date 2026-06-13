@@ -12,7 +12,14 @@ describe('TC-MOBILE-AI: AI Chat', function () {
   });
 
   after(async function () {
-    if (driver) await driver.quit();
+    if (driver) {
+      try {
+        await driver.quit();
+        console.log('Driver quit successfully.');
+      } catch (e) {
+        console.error('Failed to quit driver:', e.message);
+      }
+    }
   });
 
   afterEach(async function () {

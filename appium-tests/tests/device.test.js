@@ -30,7 +30,12 @@ describe('TC-MOBILE-DEV: Device & Network', function () {
     console.log(`-----------------------------------------\n`);
     
     if (driver) {
-      await driver.quit();
+      try {
+        await driver.quit();
+        console.log('Driver quit successfully.');
+      } catch (e) {
+        console.error('Failed to quit driver:', e.message);
+      }
     }
   });
 
