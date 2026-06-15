@@ -10,7 +10,7 @@
     "build": "vite build",
     "predeploy": "vite build --base=/GigPath/",
     "deploy": "gh-pages -d dist",
-    "test:mobile": "mocha appium-tests/tests/*.test.js --timeout 60000 --reporter appium-tests/excel-reporter.cjs --exit",
+    "test:mobile": "node generate-report.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

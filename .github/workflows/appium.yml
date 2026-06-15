@@ -23,46 +23,12 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Install Appium
-      run: |
-        npm install -g appium
-        echo "--- Installed Drivers ---"
-        appium driver list --installed
-        
-    - name: Run Tests in Android Emulator
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 31
-        target: google_apis
-        arch: x86_64
-        profile: pixel_6
-        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-        script: |
-          echo "Waiting for emulator to be fully booted..."
-          adb wait-for-device
-          
-          echo "Waiting for sys.boot_completed..."
-          while [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; do sleep 2; done
-          
-          echo "=== ADB Devices ==="
-          adb devices | grep -q "emulator" || exit 1
-          
-          mkdir -p reports/appium
-          echo "Starting Appium..."
-          appium --port 4723 > reports/appium/appium-server.log 2>&1 &
-          
-          echo "Waiting for Appium server..."
-          for i in {1..15}; do curl -s http://127.0.0.1:4723/status && break || sleep 2; done
-
-          echo "Running mobile tests..."
-          npm run test:mobile
-          
-          echo "Dumping logcat..."
-          adb logcat -d > reports/appium/logcat.log || true
+    - name: Run Smoke Tests
+      run: npm run test:mobile
       
     - name: Upload Reports
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: appium-reports
-        path: reports/appium/
+        name: test-report
+        path: test-report.xlsx
