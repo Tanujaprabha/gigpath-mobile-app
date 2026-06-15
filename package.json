@@ -10,7 +10,9 @@
     "build": "vite build",
     "predeploy": "vite build --base=/GigPath/",
     "deploy": "gh-pages -d dist",
-    "test:mobile": "node generate-report.js",
+    "test:mobile": "npm run test:mobile:run && npm run test:mobile:report",
+    "test:mobile:run": "node run-tests.js",
+    "test:mobile:report": "node generate-report.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

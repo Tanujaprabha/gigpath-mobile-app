@@ -23,12 +23,15 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Run Smoke Tests
-      run: npm run test:mobile
+    - name: Run Appium Tests
+      run: npm run test:mobile:run
+      
+    - name: Generate Excel Report
+      run: npm run test:mobile:report
       
     - name: Upload Reports
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-report
-        path: test-report.xlsx
+        name: AppiumTestReport
+        path: AppiumTestReport.xlsx
