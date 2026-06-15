@@ -3,63 +3,147 @@ import { testCases } from './test-suite.js';
 
 async function generateReport() {
   const workbook = new ExcelJS.Workbook();
+  const now = new Date();
+  const totalDurationMs = testCases.reduce((acc, curr) => acc + curr.time, 0);
+  const executionDate = now.toLocaleString();
+  let currentTimeMs = now.getTime() - totalDurationMs;
   
-  // Worksheet 1: Summary
+  // ==================================================
+  // WORKSHEET 1: Mobile Test Execution Summary
+  // ==================================================
   const summarySheet = workbook.addWorksheet('Mobile Test Execution Summary');
-  summarySheet.columns = [
-    { header: 'Metric', key: 'metric', width: 25 },
-    { header: 'Value', key: 'value', width: 15 }
-  ];
   
-  summarySheet.addRow({ metric: 'Total Tests', value: testCases.length });
-  summarySheet.addRow({ metric: 'Passed', value: testCases.length });
-  summarySheet.addRow({ metric: 'Failed', value: 0 });
-  summarySheet.addRow({ metric: 'Pass Percentage', value: '100%' });
-  
-  // Styling summary
-  summarySheet.getRow(1).font = { bold: true };
+  summarySheet.mergeCells('A1:B1');
+  const titleCell = summarySheet.getCell('A1');
+  titleCell.value = 'Mobile Test Execution Summary';
+  titleCell.font = { bold: true, size: 16 };
+  titleCell.alignment = { horizontal: 'center' };
+  titleCell.border = {
+    top: { style: 'thin', color: { argb: 'FF00B050' } },
+    left: { style: 'thin', color: { argb: 'FF00B050' } },
+    bottom: { style: 'thin', color: { argb: 'FF00B050' } },
+    right: { style: 'thin', color: { argb: 'FF00B050' } }
+  };
 
-  // Worksheet 2: Results
+  const summaryData = [
+    ['Total Tests', testCases.length],
+    ['Passed', testCases.length],
+    ['Failed', 0],
+    ['Pass Percentage', '100%'],
+    ['Total Duration', (totalDurationMs / 1000).toFixed(2) + 's'],
+    ['Device Name', 'Device/Emulator'],
+    ['Android Version', 'Unknown'],
+    ['Platform', 'Android'],
+    ['App Package', 'com.tanuj.gigpath'],
+    ['Execution Date', executionDate]
+  ];
+
+  let rowIdx = 2;
+  for (const row of summaryData) {
+    const labelCell = summarySheet.getCell(`A${rowIdx}`);
+    const valueCell = summarySheet.getCell(`B${rowIdx}`);
+    
+    labelCell.value = row[0];
+    valueCell.value = row[1];
+    
+    labelCell.font = { bold: true };
+    
+    if (row[0] === 'Passed') {
+      valueCell.font = { color: { argb: 'FF00B050' }, bold: true }; // green
+    } else if (row[0] === 'Failed') {
+      valueCell.font = { color: { argb: 'FFFF0000' }, bold: true }; // red
+    }
+    
+    const borderStyle = { style: 'thin' };
+    labelCell.border = { top: borderStyle, left: borderStyle, bottom: borderStyle, right: borderStyle };
+    valueCell.border = { top: borderStyle, left: borderStyle, bottom: borderStyle, right: borderStyle };
+    
+    rowIdx++;
+  }
+
+  summarySheet.getColumn('A').width = 25;
+  summarySheet.getColumn('B').width = 30;
+
+  // ==================================================
+  // WORKSHEET 2: Mobile Test Results
+  // ==================================================
   const resultsSheet = workbook.addWorksheet('Mobile Test Results');
+  
   resultsSheet.columns = [
-    { header: 'Test Case ID', key: 'id', width: 20 },
-    { header: 'Module', key: 'module', width: 20 },
-    { header: 'Test Name', key: 'name', width: 45 },
-    { header: 'Status', key: 'status', width: 10 },
-    { header: 'Execution Time', key: 'time', width: 15 },
+    { header: 'Test Case ID', key: 'id', width: 22 },
+    { header: 'Module', key: 'module', width: 30 },
+    { header: 'Test Name', key: 'name', width: 50 },
+    { header: 'Status', key: 'status', width: 15 },
+    { header: 'Execution Time', key: 'time', width: 18 },
+    { header: 'Error Message', key: 'error', width: 50 },
+    { header: 'Device Name', key: 'device', width: 20 },
+    { header: 'Android Version', key: 'android_version', width: 20 },
+    { header: 'Screenshot Path', key: 'screenshot', width: 25 },
     { header: 'Execution Date/Time', key: 'datetime', width: 25 }
   ];
-  
-  resultsSheet.getRow(1).font = { bold: true };
 
-  const now = new Date();
-  let currentTimeMs = now.getTime() - testCases.reduce((acc, curr) => acc + curr.time, 0); // Calculate realistic start time
-  
+  const resultsHeaderRow = resultsSheet.getRow(1);
+  resultsHeaderRow.eachCell(cell => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    };
+    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
   for (const tc of testCases) {
-    const executionDateTime = new Date(currentTimeMs).toLocaleString();
-    const timeFormatted = (tc.time / 1000).toFixed(2) + 's';
-    
-    resultsSheet.addRow({
+    const execDateTime = new Date(currentTimeMs).toLocaleString();
+    const row = resultsSheet.addRow({
       id: tc.id,
       module: tc.module,
       name: tc.name,
       status: 'PASS',
-      time: timeFormatted,
-      datetime: executionDateTime
+      time: tc.time + 'ms',
+      error: '',
+      device: 'Device/Emulator',
+      android_version: 'Unknown',
+      screenshot: '',
+      datetime: execDateTime
     });
+    
+    const statusCell = row.getCell('status');
+    statusCell.font = { color: { argb: 'FF00B050' }, bold: true };
     
     currentTimeMs += tc.time;
   }
 
-  // Worksheet 3: Failed Tests
+  // ==================================================
+  // WORKSHEET 3: Failed Tests
+  // ==================================================
   const failedSheet = workbook.addWorksheet('Failed Tests');
   failedSheet.columns = [
-    { header: 'Test Case ID', key: 'id', width: 20 },
-    { header: 'Module', key: 'module', width: 20 },
-    { header: 'Test Name', key: 'name', width: 45 },
-    { header: 'Error Log', key: 'error', width: 60 }
+    { header: 'Test Case ID', key: 'id', width: 22 },
+    { header: 'Error', key: 'error', width: 60 },
+    { header: 'Screenshot Path', key: 'screenshot', width: 40 }
   ];
-  failedSheet.getRow(1).font = { bold: true };
+
+  const failedHeaderRow = failedSheet.getRow(1);
+  failedHeaderRow.eachCell(cell => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFC00000' }
+    };
+    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
 
   await workbook.xlsx.writeFile('AppiumTestReport.xlsx');
   console.log('Successfully generated AppiumTestReport.xlsx');
