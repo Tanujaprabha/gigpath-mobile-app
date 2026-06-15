@@ -56,10 +56,13 @@ function RouteLogger() {
   return null
 }
 
+import InstallPrompt from './components/InstallPrompt'
+
 export default function App() {
   return (
     <>
       <RouteLogger />
+      <InstallPrompt />
       <Routes>
         <Route path="/" element={<SplashScreen />} />
         <Route path="/welcome" element={<WelcomeScreen />} />
