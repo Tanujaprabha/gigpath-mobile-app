@@ -61,9 +61,23 @@ jobs:
         api-level: 34
         arch: x86_64
         profile: pixel_6
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         script: |
           echo "Waiting for emulator to be fully booted..."
           adb wait-for-device
+          
+          echo "Waiting for sys.boot_completed..."
+          while [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; do
+            sleep 2
+          done
+          
+          echo "Waiting for package manager to be ready..."
+          while [ "$(adb shell getprop dev.bootcomplete | tr -d '\r')" != "1" ]; do
+            sleep 2
+          done
+          
+          echo "Waiting for system UI..."
+          sleep 10
           
           echo "=== ADB Devices ==="
           adb devices
