@@ -26,7 +26,13 @@ jobs:
     - name: Install Appium and UIAutomator2
       run: |
         npm install -g appium
-        appium driver install uiautomator2
+        if ! appium driver list --installed | grep -q "uiautomator2"; then
+          echo "Installing uiautomator2 driver..."
+          appium driver install uiautomator2
+        else
+          echo "uiautomator2 driver is already installed."
+        fi
+        echo "--- Installed Drivers ---"
         appium driver list --installed
         
     - name: Run Tests in Android Emulator
