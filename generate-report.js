@@ -70,16 +70,13 @@ async function generateReport() {
   const resultsSheet = workbook.addWorksheet('Mobile Test Results');
   
   resultsSheet.columns = [
-    { header: 'Test Case ID', key: 'id', width: 22 },
-    { header: 'Module', key: 'module', width: 30 },
-    { header: 'Test Name', key: 'name', width: 50 },
+    { header: 'Test Case ID', key: 'id', width: 25 },
+    { header: 'Module', key: 'module', width: 25 },
+    { header: 'Screen Name', key: 'screen', width: 25 },
+    { header: 'Scenario Name', key: 'name', width: 50 },
+    { header: 'Expected Result', key: 'expectedResult', width: 50 },
     { header: 'Status', key: 'status', width: 15 },
-    { header: 'Execution Time', key: 'time', width: 18 },
-    { header: 'Error Message', key: 'error', width: 50 },
-    { header: 'Device Name', key: 'device', width: 20 },
-    { header: 'Android Version', key: 'android_version', width: 20 },
-    { header: 'Screenshot Path', key: 'screenshot', width: 25 },
-    { header: 'Execution Date/Time', key: 'datetime', width: 25 }
+    { header: 'Execution Time', key: 'time', width: 18 }
   ];
 
   const resultsHeaderRow = resultsSheet.getRow(1);
@@ -99,22 +96,18 @@ async function generateReport() {
   });
 
   for (const tc of testCases) {
-    const execDateTime = new Date(currentTimeMs).toLocaleString();
     const row = resultsSheet.addRow({
       id: tc.id,
       module: tc.module,
+      screen: tc.screen,
       name: tc.name,
-      status: 'PASS',
-      time: tc.time + 'ms',
-      error: '',
-      device: 'Device/Emulator',
-      android_version: 'Unknown',
-      screenshot: '',
-      datetime: execDateTime
+      expectedResult: tc.expectedResult,
+      status: tc.status || 'PASS',
+      time: tc.time + 'ms'
     });
     
     const statusCell = row.getCell('status');
-    statusCell.font = { color: { argb: 'FF00B050' }, bold: true };
+    statusCell.font = { color: tc.status === 'FAIL' ? { argb: 'FFFF0000' } : { argb: 'FF00B050' }, bold: true };
     
     currentTimeMs += tc.time;
   }
